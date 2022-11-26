@@ -90,7 +90,7 @@ export const StampCard = ({
 
   return (
     <div class={styles.container}>
-      <p>{restaurant.name}</p>
+      <p class={styles.name}>{restaurant.name}</p>
       <div class={styles.card} ref={cardElement}>
         {stamps.value.map((isStamped) => {
           return <Stamp isStamped={isStamped} />;

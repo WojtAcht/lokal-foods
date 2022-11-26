@@ -8,6 +8,12 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     place-items: center;
+    max-width: 30rem;
+    margin: 0 auto;
+}
+
+.name {
+    font-size: 1.25rem;
 }
 
 .stamp {
