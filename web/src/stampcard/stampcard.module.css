@@ -1,10 +1,32 @@
+.container {
+    padding: 2rem;
+}
+
 .card {
+    border-radius: 15px;
+    border: 1px solid #213547;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    place-items: center;
+    max-width: 30rem;
+    margin: 0 auto;
+}
+
+.name {
+    font-size: 1.25rem;
+}
+
+.stamp {
+    height: 3rem;
+    width: 3rem;
+    border-radius: 50%;
+    margin: 1rem;
 }
 
 .stamped {
-
+    background-color: darksalmon;
 }
 
 .notStamped {
-
+    border: 1px solid black;
 }

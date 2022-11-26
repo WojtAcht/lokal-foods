@@ -1,0 +1,18 @@
+.nav {
+    width: 100%;
+    display: flex;
+}
+
+.navButton {
+    display: flex;
+    flex: 1 1 0;
+    justify-content: center;
+    background-color: antiquewhite;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+}
+
+.active {
+    background-color: darksalmon;
+    color: white;
+
+}
