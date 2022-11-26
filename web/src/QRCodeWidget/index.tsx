@@ -10,7 +10,7 @@ export const QRCodeWidget = () => {
 
   useEffect(() => {
     if (!canvas.current) return;
-    QRCode.toCanvas(canvas.current, CLIENT_ID).catch(() => {});
+    QRCode.toCanvas(canvas.current, CLIENT_ID, { scale: 10 }).catch(() => {});
   }, []);
 
   return (
