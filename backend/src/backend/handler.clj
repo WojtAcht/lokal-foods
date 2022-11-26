@@ -4,6 +4,7 @@
             [luminus.http-server :as http]
             [luminus.ws :as ws]
             [ring.middleware.cors :refer [wrap-cors]]
+            [clojure.data.json :refer [read-str write-str]]
             [schema.core :as s]))
 
 (def db (ref {:user {:id "12345"
@@ -19,7 +20,8 @@
    :on-close (fn [channel _code _reason]
                (println "ON CLOSE!"))
    :on-text (fn [channel message]
-              (dosync (alter channels assoc message channel)))
+              (let [client-id (-> message (read-str :key-fn keyword) :id)]
+                (dosync (alter channels assoc client-id channel))))
    :on-error (fn [channel error]
                (println "ON CLOSE!"))
    :context-path "/api/websockets"
@@ -46,9 +48,12 @@
        (let [user (:user @db)]
          (when (and (= (:id user) id)
                     (= (:stamp-hash user) stamp-hash))
-           (doseq [channel (vals @channels)]
-             (ws/send! channel "stamp!"))
-           (ok {:success true}))))
+           (let [[_ channel] (->> @channels
+                                  (filter (fn [[channel-user-id channel]]
+                                            (= channel-user-id id)))
+                                  first)]
+             (ws/send! channel (write-str {:id id :stamp true}))
+             (ok {:success true})))))
 
      (GET "/healthz" []
        :summary "Checks if server is healthy."

@@ -4,8 +4,9 @@
                   [metosin/compojure-api "2.0.0-alpha30"]
                   [ring-cors "0.1.13"]
                   [luminus-jetty "0.2.0"]
-                  [stylefruits/gniazdo "1.2.0"]]
+                  [org.clojure/data.json "2.4.0"]]
    :main backend.handler
    :uberjar-name "server.jar"
-   :profiles {:dev {:dependencies [[javax.servlet/javax.servlet-api "3.1.0"]]
+   :profiles {:dev {:dependencies [[javax.servlet/javax.servlet-api "3.1.0"]
+                                   [stylefruits/gniazdo "1.2.0"]]
                    :plugins [[lein-ring "0.12.5"]]}})
