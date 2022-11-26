@@ -23,6 +23,15 @@
 
 (def channels (ref {}))
 
+(def MAX-STAMPS-COUNT 8)
+
+(defn user-client-stamps-count [user-id client-id]
+  (->> @stamp-db
+       vals
+       (filter #(and (= (:client-id %) (keyword client-id))
+                     (= (:user-id %) (keyword user-id))))
+       count))
+
 (def ws-route-context
   "WebSocket callback functions"
   {:on-open (fn [_channel]
@@ -48,10 +57,10 @@
                    :description "Lokal foods API"}
             :tags [{:name "api", :description "some apis"}]}}}
 
-   (context "/api" []
+   (context "/api" request
      :tags ["api"]
 
-     (POST "/stamp/add" []
+     (POST "/stamp/add" request
        :body-params [stamp-hash :- String
                      user-id :- String
                      client-id :- String]
@@ -64,28 +73,28 @@
                [_ channel] (->> @channels
                                 (filter (fn [[channel-user-id channel]]
                                           (= channel-user-id user-id)))
-                                first)]
+                                first)
+               stamps-count (user-client-stamps-count user-id client-id)]
            (dosync
             (alter stamp-db assoc new-kw-id {:client-id (keyword client-id)
                                              :user-id (keyword user-id)
                                              :stamp-hash stamp-hash}))
            (when channel
-            (ws/send! channel (write-str {:id user-id
-                                          :success true
-                                          :stamp-hash stamp-hash})))
+             (ws/send! channel (write-str {:id user-id
+                                           :client-id client-id
+                                           :success true
+                                           :stamp-hash stamp-hash
+                                           :finished (= (inc stamps-count) MAX-STAMPS-COUNT)})))
            (ok {:success true}))))
 
-     (POST "/stamp/status" []
+     (POST "/stamp/status" request
        :body-params [client-id :- String user-id :- String]
        :summary "Check user stamps status"
        (if-not (and ((keyword user-id) @user-db)
                     ((keyword client-id) @client-db))
-         (ok {:success false})
-         (let [stamps (->> @stamp-db
-                           vals
-                           (filter #(and (= (:client-id %) (keyword client-id))
-                                         (= (:user-id %) (keyword user-id)))))]
-           (ok {:success true :result (count stamps)})))))))
+         (ok {:success false}) 
+         (ok {:success true
+              :result (user-client-stamps-count user-id client-id)}))))))
 
 (def handler
   (-> (routes core-routes)
