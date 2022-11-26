@@ -2,6 +2,7 @@ import styles from "./stampcard.module.css";
 import { restaurants } from "../app";
 import { computed } from "@preact/signals";
 import { MutableRef, useCallback, useEffect, useRef } from "preact/hooks";
+import JSConfetti from "js-confetti";
 
 interface IStampCardProps {
   restaurantId: number;
@@ -45,6 +46,10 @@ export const StampCard = ({
     return restaurant.id === restaurantId;
   });
   const cardElement = useRef<HTMLDivElement>(null);
+  const conf = useRef<JSConfetti | null>(null);
+  if (!conf.current) {
+    conf.current = new JSConfetti();
+  }
 
   const animateIn: () => Animation | undefined = useCallback(() => {
     if (!cardElement.current) {
@@ -66,12 +71,17 @@ export const StampCard = ({
       return undefined;
     }
     const doShit = (e: Event) => {
-      const { detail } = e as CustomEvent<number>;
+      const { detail } = e as CustomEvent<{ id: number; isFinished: boolean }>;
       animateIn()
         ?.finished?.then?.(() => {
-          updateStamps(detail);
+          updateStamps(detail.id);
         })
-        .then(() => animateOut());
+        .then(() => animateOut()?.finished)
+        .then(() => {
+          if (detail.isFinished && conf.current) {
+            conf.current?.addConfetti();
+          }
+        });
     };
 
     target.addEventListener("stamp", doShit);

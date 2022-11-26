@@ -60,6 +60,8 @@ button {
   background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
+  color: black;
+  margin: 0;
 }
 button:focus,
 button:focus-visible {

@@ -1,12 +1,14 @@
-const socketURL = "ws://localhost:3000/api/websockets";
+import { CLIENT_ID } from "./app";
+
+const socketURL = "ws://192.168.123.116:3000/api/websockets";
 
 export function connectSocket(
-  onStamp: (restaurantId: number) => void
+  onStamp: (restaurantId: number, isFinished: boolean) => void
 ): WebSocket {
   const socket = new WebSocket(socketURL);
 
   socket.addEventListener("open", (e) => {
-    socket.send(JSON.stringify({ id: "0" }));
+    socket.send(JSON.stringify({ id: CLIENT_ID }));
   });
 
   socket.addEventListener("message", (messageEvent) => {
@@ -15,13 +17,14 @@ export function connectSocket(
       "client-id": string;
       success: boolean;
       "stamp-hash": string;
+      finished: boolean;
     };
     if (
       messageData?.success &&
       messageData?.["stamp-hash"] &&
       messageData?.["client-id"]
     ) {
-      onStamp(Number(messageData["client-id"]));
+      onStamp(Number(messageData["client-id"]), messageData?.finished ?? false);
     }
   });
 

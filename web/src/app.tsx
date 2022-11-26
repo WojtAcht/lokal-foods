@@ -36,7 +36,7 @@ export function App() {
   }
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/stamp/status", {
+    fetch("http://192.168.123.116:3000/api/stamp/status", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -68,15 +68,15 @@ export function App() {
     }));
   }, []);
 
-  const onStampSocket = (restaurantId: number) => {
+  const onStampSocket = (restaurantId: number, isFinished: boolean) => {
     if (currentTab === ETabs.CODE) {
       setCurrentTab(ETabs.STAMPS);
       setTimeout(() => {
         // @ts-ignore
         if (stampEventTarget.current) {
           stampEventTarget.current?.dispatchEvent(
-            new CustomEvent<number>("stamp", {
-              detail: restaurantId,
+            new CustomEvent<{ id: number; isFinished: boolean }>("stamp", {
+              detail: { id: restaurantId, isFinished },
             })
           );
         }
@@ -84,8 +84,8 @@ export function App() {
     } else {
       if (stampEventTarget.current) {
         stampEventTarget.current?.dispatchEvent(
-          new CustomEvent<number>("stamp", {
-            detail: restaurantId,
+          new CustomEvent<{ id: number; isFinished: boolean }>("stamp", {
+            detail: { id: restaurantId, isFinished },
           })
         );
       }
