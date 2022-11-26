@@ -1,0 +1,11 @@
+.title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0 1rem;
+}
+.title svg {
+    height: 3.5rem;
+    width: 3.5rem;
+}
