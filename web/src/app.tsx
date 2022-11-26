@@ -1,7 +1,7 @@
 import { signal } from "@preact/signals";
 
 import { connectSocket } from "./socket";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { Logo } from "./logo ";
 import { StampCard } from "./stampcard";
 import { QRCodeWidget } from "./QRCodeWidget";
@@ -29,7 +29,11 @@ export function App() {
   const [selectedRestaurantId] = useState(0);
   const [currentTab, setCurrentTab] = useState(ETabs.CODE);
   const socket = useRef<WebSocket | null>(null);
-  const card = useRef(null);
+
+  const stampEventTarget = useRef<EventTarget | null>(null);
+  if (!stampEventTarget.current) {
+    stampEventTarget.current = new EventTarget();
+  }
 
   useEffect(() => {
     fetch("http://localhost:3000/api/stamp/status", {
@@ -54,32 +58,43 @@ export function App() {
     });
   }, [selectedRestaurantId]);
 
-  const onStamp = (restaurantId: number) => {
+  const stamp = useCallback((restaurantId: number) => {
+    restaurants.value = restaurants.value.map((restaurant) => ({
+      ...restaurant,
+      numberOfStamps:
+        restaurant.id === restaurantId
+          ? restaurant.numberOfStamps + 1
+          : restaurant.numberOfStamps,
+    }));
+  }, []);
+
+  const onStampSocket = (restaurantId: number) => {
     if (currentTab === ETabs.CODE) {
       setCurrentTab(ETabs.STAMPS);
       setTimeout(() => {
-        restaurants.value = restaurants.value.map((restaurant) => ({
-          ...restaurant,
-          numberOfStamps:
-            restaurant.id === restaurantId
-              ? restaurant.numberOfStamps + 1
-              : restaurant.numberOfStamps,
-        }));
-      }, 500);
+        // @ts-ignore
+        if (stampEventTarget.current) {
+          stampEventTarget.current?.dispatchEvent(
+            new CustomEvent<number>("stamp", {
+              detail: restaurantId,
+            })
+          );
+        }
+      }, 250);
     } else {
-      restaurants.value = restaurants.value.map((restaurant) => ({
-        ...restaurant,
-        numberOfStamps:
-          restaurant.id === restaurantId
-            ? restaurant.numberOfStamps + 1
-            : restaurant.numberOfStamps,
-      }));
+      if (stampEventTarget.current) {
+        stampEventTarget.current?.dispatchEvent(
+          new CustomEvent<number>("stamp", {
+            detail: restaurantId,
+          })
+        );
+      }
     }
   };
 
   useEffect(() => {
     if (socket.current) return;
-    socket.current = connectSocket(onStamp);
+    socket.current = connectSocket(onStampSocket);
   }, []);
 
   return (
@@ -89,7 +104,11 @@ export function App() {
       {currentTab == ETabs.CODE ? (
         <QRCodeWidget />
       ) : (
-        <StampCard restaurantId={selectedRestaurantId} />
+        <StampCard
+          restaurantId={selectedRestaurantId}
+          updateStamps={stamp}
+          eventTarget={stampEventTarget}
+        />
       )}
     </>
   );
