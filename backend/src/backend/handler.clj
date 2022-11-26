@@ -7,19 +7,21 @@
             [clojure.data.json :refer [read-str write-str]]
             [schema.core :as s]))
 
+(def initial-stamp-db {:0 {:client-id :0
+                           :user-id :0
+                           :hash "123"}
+                       :1 {:client-id :0
+                           :user-id :1
+                           :hash "321"}
+                       :2 {:client-id :1
+                           :user-id :0
+                           :hash "234"}})
+
 (def user-db (ref {:0 {:name "michał"}
                    :1 {:name "wojtek"}}))
 (def client-db (ref {:0 {:name "kebab"}
                      :1 {:name "pizza"}}))
-(def stamp-db (ref {:0 {:client-id :0
-                        :user-id :0
-                        :hash "123"}
-                    :1 {:client-id :0
-                        :user-id :1
-                        :hash "321"}
-                    :2 {:client-id :1
-                        :user-id :0
-                        :hash "234"}}))
+(def stamp-db (ref initial-stamp-db))
 
 (def channels (ref {}))
 
@@ -94,7 +96,12 @@
                     ((keyword client-id) @client-db))
          (ok {:success false}) 
          (ok {:success true
-              :result (user-client-stamps-count user-id client-id)}))))))
+              :result (user-client-stamps-count user-id client-id)})))
+     
+     (POST "/stamp/reset" request
+       :summary "Resets stamps state."
+       (dosync (ref-set stamp-db initial-stamp-db))
+       (ok {:success true})))))
 
 (def handler
   (-> (routes core-routes)
