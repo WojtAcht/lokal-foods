@@ -69,7 +69,7 @@
        :summary "Checks stamp hash and sends information to client via websocket."
        (if-not (and ((keyword user-id) @user-db)
                     ((keyword client-id) @client-db))
-         (ok {:success false})
+         (bad-request {:success false})
          (let [new-id (rand-int 1000)
                new-kw-id (keyword (str new-id))
                [_ channel] (->> @channels
@@ -77,17 +77,20 @@
                                           (= channel-user-id user-id)))
                                 first)
                stamps-count (user-client-stamps-count user-id client-id)]
-           (dosync
-            (alter stamp-db assoc new-kw-id {:client-id (keyword client-id)
-                                             :user-id (keyword user-id)
-                                             :stamp-hash stamp-hash}))
-           (when channel
-             (ws/send! channel (write-str {:id user-id
-                                           :client-id client-id
-                                           :success true
-                                           :stamp-hash stamp-hash
-                                           :finished (= (inc stamps-count) MAX-STAMPS-COUNT)})))
-           (ok {:success true}))))
+           (if (= stamps-count MAX-STAMPS-COUNT)
+             (bad-request {:success false})
+             (do
+               (dosync
+                (alter stamp-db assoc new-kw-id {:client-id (keyword client-id)
+                                                 :user-id (keyword user-id)
+                                                 :stamp-hash stamp-hash}))
+               (when channel
+                 (ws/send! channel (write-str {:id user-id
+                                               :client-id client-id
+                                               :success true
+                                               :stamp-hash stamp-hash
+                                               :finished (= (inc stamps-count) MAX-STAMPS-COUNT)})))
+               (ok {:success true}))))))
 
      (POST "/stamp/status" request
        :body-params [client-id :- String user-id :- String]
