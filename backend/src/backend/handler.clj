@@ -2,6 +2,7 @@
   (:require [compojure.api.sweet :refer :all]
             [ring.util.http-response :refer :all]
             [luminus.http-server :as http]
+            [luminus.ws :as ws]
             [ring.middleware.cors :refer [wrap-cors]]
             [schema.core :as s]))
 
@@ -9,13 +10,16 @@
                      :stamp-hash "00000"}
               :admin {}}))
 
+(def channels (ref {}))
+
 (def ws-route-context
   "WebSocket callback functions"
-  {:on-open (fn [_channel] (println "NEW CHANNEL!"))
+  {:on-open (fn [_channel]
+              (println "NEW CHANNEL!"))
    :on-close (fn [channel _code _reason]
                (println "ON CLOSE!"))
    :on-text (fn [channel message]
-              (println "ON TEXT!"))
+              (dosync (alter channels assoc message channel)))
    :on-error (fn [channel error]
                (println "ON CLOSE!"))
    :context-path "/api/websockets"
@@ -42,6 +46,8 @@
        (let [user (:user @db)]
          (when (and (= (:id user) id)
                     (= (:stamp-hash user) stamp-hash))
+           (doseq [channel (vals @channels)]
+             (ws/send! channel "stamp!"))
            (ok {:success true}))))
 
      (GET "/healthz" []
